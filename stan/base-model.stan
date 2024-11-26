@@ -3,6 +3,7 @@ data {
   int<lower=1> K;           // Number of possible ranks (same as number of participants)
   int<lower=1> R;           // Number of races (e.g., 8)
   int<lower=1, upper=K> rank[N, R]; // Observed ranks for each participant in each race
+  int<lower=1, upper=100> reward[K];
 }
 
 parameters {
@@ -18,22 +19,24 @@ model {
   for (r in 2:R) {
     skill[, r] ~ normal(skill[, r-1], delta);  // Skill evolves over time (race to race)
   }
-  //sigma ~ cauchy(0, 2);        // Prior for noise in the ranking process
+  sigma ~ cauchy(0, 2);        // Prior for noise in the ranking process
   cutpoints ~ normal(0, 1);    // Prior for cutpoints
 
   // Likelihood
   for (r in 1:R) {
     for (n in 1:N) {
-      rank[n, r] ~ ordered_logistic(skill[n, r], cutpoints); // / sigma); // Ranking model
+      rank[n, r] ~ ordered_logistic(skill[n, r], cutpoints / sigma); // Ranking model
     }
   }
 }
 
-// generated quantities {
-//   int<lower=1, upper=K> predicted_rank[N, R]; // Predicted ranks for each race and participant
-//   for (r in 1:R) {
-//     for (n in 1:N) {
-//       predicted_rank[n, r] = ordered_logistic_rng(skill[n, r], cutpoints / sigma);
-//     }
-//   }
-// }
+generated quantities {
+  int<lower=1, upper=K> predicted_rank[N, R]; // Predicted ranks for each race and participant
+  int<lower=1> points[N, R];
+  for (r in 1:R) {
+    for (n in 1:N) {
+      predicted_rank[n, r] = ordered_logistic_rng(skill[n, r], cutpoints / sigma);
+      points[n, r] = reward[predicted_rank[n, r]];
+    }
+  }
+}

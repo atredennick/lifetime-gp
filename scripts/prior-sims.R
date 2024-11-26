@@ -18,12 +18,15 @@ for (r in 1:R) {
   }
 }
 
+reward <- c(100, 80, 70, 60, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, rep(1, 11))
+
 # Prepare data for Stan
 data_list <- list(
   N = N,
   K = K,
   R = R,
-  rank = ranks
+  rank = ranks,
+  reward = reward
 )
 
 # Fit the model
@@ -31,8 +34,8 @@ fit <- stan(
   file = here("stan", "base-model.stan"),  # Path to the updated Stan model
   data = data_list,
   iter = 2000,
-  chains = 4
+  chains = 1
 )
 
 # Extract results
-print(fit, pars = c("skill", "sigma", "cutpoints", "delta"))
+print(fit, pars = c("points"))
